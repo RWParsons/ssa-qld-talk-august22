@@ -467,12 +467,150 @@ shinyAppDir("apps/cost-effective-cpms-app/")
 ![](www/hex.png){.center width=130px}
 
 
-## {predictNMB} <img src='www/hex.png' align="right" height="100" />
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" />
+
+![](www/github-logo.png){width=30px align="left"} github.com/RWParsons/predictNMB
+
+>- How would my model (or treat-all/none strategy) perform regarding NMB?
+>- What happens when the intervention changes?
+>- What happens when the model improves?
+>- What happens when the event rate changes?
 
 
-## Thank you
+```{r, echo=F}
+# remove all objects from first part of talk so that there's no conflicts with predictNMB functions
+rm(list=ls())
+```
 
-Team
+
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" />
+
+```{r}
+fx_nmb1 <- function(...) {
+  c(
+    "TP" = -100*(1-1/3)-10, # cost of the outcome (reduced by treatment effect) 
+                            # - cost of treatment
+    "FP" =  -10,  # cost of treatment
+    "TN" =    0,  # no cost of treatment or outcome
+    "FN" = -100   # full cost of the outcome
+  )
+}
+map_dfr(1:3, fx_nmb1)
+```
+
+---
+
+```r
+plot(density(rbeta(1000, 10, 20)))
+plot(density(rgamma(1000, 100)))
+```
+
+```{r, fig.align='hold', echo=F, fig.width=10}
+par(mfrow=c(1,2))
+plot(density(rbeta(1000, 10, 20)))
+plot(density(rgamma(1000, 100)))
+```
+
+---
+
+```{r}
+fx_nmb2 <- function(...) {
+  effectiveness <- rbeta(1, 10, 20)
+  event_cost <- rgamma(1, 100)
+  treatment_cost <- 10
+  
+  c(
+    "TP" = -event_cost * (1-effectiveness) - treatment_cost,
+    "FP" = -treatment_cost, 
+    "TN" =  0,
+    "FN" = -event_cost
+  )
+}
+map_dfr(1:3, fx_nmb2)
+```
+
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" />
+
+```{r, include=F}
+library(predictNMB)
+
+# sim_obj <- do_nmb_sim(
+#   n_sims = 5000, n_valid = 10000, sim_auc = 0.7, event_rate = 0.1,
+#   fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
+#   cutpoint_methods = c("all", "none", "youden", "cost_effective")
+# )
+# saveRDS(sim_obj, "input/sim_obj.rds")
+
+sim_obj <- readRDS("input/sim_obj.rds")
+
+# screen_obj <- screen_simulation_inputs(
+#   n_sims = 5000, n_valid = 10000, sim_auc = seq(0.7, 0.95, 0.05), event_rate = c(0.01, 0.05, 0.1),
+#   fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
+#   cutpoint_methods = c("all", "none", "youden", "cost_effective")
+# )
+# saveRDS(screen_obj, "input/screen_obj.rds")
+
+screen_obj <- readRDS("input/screen_obj.rds")
+```
+
+```r
+library(predictNMB)
+sim_obj <- do_nmb_sim(
+  n_sims = 5000, n_valid = 10000, sim_auc = 0.7, event_rate = 0.1,
+  fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
+  cutpoint_methods = c("all", "none", "youden", "cost_effective")
+)
+```
+
+```{r}
+sim_obj
+```
+
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> 
+
+```{r, fig.align="center"}
+plot(sim_obj)
+```
+
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> 
+
+```r
+screen_obj <- screen_simulation_inputs(
+  n_sims = 5000, n_valid = 10000, 
+  sim_auc = seq(0.7, 0.95, 0.05), event_rate = c(0.01, 0.05, 0.1),
+  fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
+  cutpoint_methods = c("all", "none", "youden", "cost_effective")
+)
+```
+
+---
+
+```{r, message=F, fig.align="center"}
+named_vec <- c("Treat All" = "all", "Treat None" = "none",
+               "Youden Index" = "youden","Cost-effective" = "cost_effective")
+plot(screen_obj, rename_vector=named_vec)
+```
+
+---
+
+```{r, message=F, fig.align="center"}
+plot(screen_obj, rename_vector=named_vec, what="inb",inb_ref_col="Treat All")
+```
+
+---
+
+```{r, message=F, fig.align="center"}
+plot(screen_obj, rename_vector=named_vec, x_axis_var="event_rate")
+```
+
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> {.build}
+
+>- How good does my model need to be useful (in the context of how it'd be used)?
+>- What is the relative merit of improving my model's AUC by X (in \$)?
+>- Has or will there research efforts towards developing models with ineffective interventions or where models are required to be unbelievably good to be effective?
+
+
+## Thank you <img src='www/hex.png' align="right" height="200" />
 
   - Robin Blythe
   - Susanna Cramb
@@ -486,6 +624,6 @@ Team
 
 shiny app: [aushsi.shinyapps.io/cost-effective-cpms-app/](https://aushsi.shinyapps.io/cost-effective-cpms-app/)
 
-slides: [github.com/RWParsons/im-22-presentation](https://github.com/RWParsons/im-22-presentation)
+`{predictNMB}`: [github.com/RWParsons/predictNMB](https://github.com/RWParsons/predictNMB)
 
-
+slides: [github.com/RWParsons/ssa-qld-presentation-august22](https://github.com/RWParsons/ssa-qld-presentation-august22)
