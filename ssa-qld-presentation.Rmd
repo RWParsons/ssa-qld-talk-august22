@@ -1,0 +1,491 @@
+---
+title: "Considering patient outcomes and healthcare costs when obtaining prediction model cutpoints may improve value-based care "
+author: "Rex Parsons"
+date: '2022-07-15'
+output:
+  ioslides_presentation:
+    widescreen: yes
+    logo: www/aushsi-logo.png
+    css: www/styles.css
+runtime: shiny
+resource_files:
+- apps/cost-effective-cpms-app/app.R
+- apps/cost-effective-cpms-app/utils.R
+- apps/prediction-threshold-slider/app.R
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(kableExtra)
+source("apps/src/utils.R")
+source("src/functions.R")
+```
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+## Outline
+
+- Background to prediction models and cutpoints
+- Integrating economic considerations into cutpoint selection
+- Simulation study results
+
+
+## Prediction models
+
+![](www/cdss.jpg){.center height=300px}
+
+>- Do they have it? (diagnostic)
+>- Will they get it? (prognostic)
+
+
+>- Estimates patient risk given some data
+
+## Prediction models
+
+![](www/p-given-data.png){.center height=400px}
+
+## Prediction models
+
+
+But how do they inform the user?
+
+>- Probability/Odds of fall
+>- High/medium/low risk categories 🚦
+>- Binary categories (intervention vs none)
+
+
+## Prediction models
+
+
+But how do they inform the user?
+
+
+- **Probability/Odds of fall**
+- **High/medium/low risk categories**🚦
+- Binary categories (intervention vs none)
+
+
+## Prediction models
+
+
+But how do they inform the user?
+
+- Probability/Odds of fall
+- High/medium/low risk categories 🚦
+- **Binary categories (intervention vs none)**
+
+
+## Cutpoints
+
+
+![](www/sand-1.jpg){.center height=323px}
+
+
+## Cutpoints
+
+![](www/sand-2.png){.center height=400px}
+
+
+## Cutpoints
+
+
+![](www/sand-3.png){.center height=400px}
+
+
+## {.fullscreen}
+
+```{r, echo=F, message=F, warning=F}
+shinyAppDir("apps/prediction-threshold-slider/")
+```
+
+## Cutpoint selection methods
+
+All maximise a performance based metric (not outcome) <footnote>Ilker Unal. "Defining an Optimal Cut-Point Value in ROC Analysis: An Alternative Approach." *Computational and Mathematical Methods in Medicine* (2017).</footnote>
+
+- Youden index: $J(c) = Se(c) + Sp(c) - 1$
+
+- Sens-Spec product: $CZ(c) = Se(c) \times Sp(c)$
+
+- Index of Union: $IU(c) = |Se(c) − AUC| + |Sp(c) − AUC|$
+
+- The Closest to (0, 1) Criteria: $ER(c) = \sqrt{(1 − Se(c)^2) + (1 − Sp(c)^2)}$
+
+<br>
+
+>- None of these consider anything beyond the model itself (costs, patient outcomes, interventions)
+
+
+## Objectives
+
+
+- Integrate information of patient outcomes and treatment costs into cutpoint selection
+
+>- Evaluate how it compares to other cutpoint selection methods using a simulation study
+
+
+## Evaluation {.build}
+
+Net Monetary Benefit (NMB) is calculated separately for each possible classification.
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c("TRUE POSITIVE (TP)", "FALSE POSITIVE (FP)"), 
+  P_Negative = c("FALSE NEGATIVE (FN)", "TRUE NEGATIVE (TN)")
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable() %>%
+  kable_styling(font_size=15, full_width=FALSE) %>%
+  column_spec(1, bold=T)
+```
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c(
+    "$NMB = COST_{outcome}\\times(1-EFFECT_{treatment}) + COST_{treatment}$", 
+    "$NMB = COST_{treatment}$"
+  ), 
+  P_Negative = c(
+    "$NMB = COST_{outcome}$",
+    "$NMB = 0$"
+  )
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable() %>%
+  kable_styling(font_size=15, full_width=FALSE) %>%
+  column_spec(1, bold=T)
+```
+
+<div class="notes">
+$$ \tiny
+NMB = COST_{outcome}\times(1-EFFECT_{treatment}) + COST_{treatment}
+\\
+\scriptsize COST_{outcome} = QALY\times WTP
+$$
+</div>
+
+## Cost-effective cutpoint {.build}
+
+The `{cutpointr}` R package by Christian Thiele includes almost all the cutpoint selection methods and also allows you to pass custom metrics that aren't already built in
+
+Applied a custom metric and `{cutpointr}` to maximise NMB: 
+
+$$
+\small
+CE(c) = n_{TP} \times NMB_{TP} + n_{FP} \times NMB_{FP} + n_{TN} \times NMB_{TN} + n_{FN} \times NMB_{FN}
+$$
+
+## Cost-effective cutpoint {.build}
+
+$$
+\small
+CE(c) = n_{TP} \times NMB_{TP} + n_{FP} \times NMB_{FP} + n_{TN} \times NMB_{TN} + n_{FN} \times NMB_{FN}
+$$
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c(
+    "$NMB_{TP} = COST_{outcome}\\times(1-EFFECT_{treatment}) + COST_{treatment}$", 
+    "$NMB_{FP} = COST_{treatment}$"
+  ), 
+  P_Negative = c(
+    "$NMB_{FN} = COST_{outcome}$",
+    "$NMB_{TN} = 0$"
+  )
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable('html') %>%
+  kable_styling(font_size=15, full_width=FALSE, latex_options = c('hold_position')) %>%
+  column_spec(1, bold=T)
+
+```
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c("TRUE POSITIVE ($n_{TP}$)", "FALSE POSITIVE ($n_{FP}$)"), 
+  P_Negative = c("FALSE NEGATIVE ($n_{FN}$)", "TRUE NEGATIVE ($n_{TN}$)")
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable() %>%
+  kable_styling(font_size=15, full_width=FALSE) %>%
+  column_spec(1, bold=T)
+```
+
+## Cost-effective cutpoint
+
+$$
+\small
+CE(c) = \color{red}{n_{TP}} \times \color{red}{NMB_{TP}} + n_{FP} \times NMB_{FP} + n_{TN} \times NMB_{TN} + n_{FN} \times NMB_{FN}
+$$
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c(
+    "$\\color{red}{NMB_{TP}} = COST_{outcome}\\times(1-EFFECT_{treatment}) + COST_{treatment}$", 
+    "$NMB_{FP} = COST_{treatment}$"
+  ), 
+  P_Negative = c(
+    "$NMB_{FN} = COST_{outcome}$",
+    "$NMB_{TN} = 0$"
+  )
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable('html') %>%
+  kable_styling(font_size=15, full_width=FALSE, latex_options = c('hold_position')) %>%
+  column_spec(1, bold=T)
+
+```
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c("TRUE POSITIVE ($\\color{red}{n_{TP}}$)", "FALSE POSITIVE ($n_{FP}$)"), 
+  P_Negative = c("FALSE NEGATIVE ($n_{FN}$)", "TRUE NEGATIVE ($n_{TN}$)")
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable() %>%
+  kable_styling(font_size=15, full_width=FALSE) %>%
+  column_spec(1, bold=T)
+```
+
+## Cost-effective cutpoint
+
+$$
+\small
+CE(c) = n_{TP} \times NMB_{TP} + \color{blue}{n_{FP}} \times \color{blue}{NMB_{FP}} + n_{TN} \times NMB_{TN} + n_{FN} \times NMB_{FN}
+$$
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c(
+    "$NMB_{TP} = COST_{outcome}\\times(1-EFFECT_{treatment}) + COST_{treatment}$", 
+    "$\\color{blue}{NMB_{FP}} = COST_{treatment}$"
+  ), 
+  P_Negative = c(
+    "$NMB_{FN} = COST_{outcome}$",
+    "$NMB_{TN} = 0$"
+  )
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable('html') %>%
+  kable_styling(font_size=15, full_width=FALSE, latex_options = c('hold_position')) %>%
+  column_spec(1, bold=T)
+
+```
+
+```{r, echo=F}
+data.frame(
+  row.names = c("Actually Positive", "Actually Negative"),
+  P_Positive = c("TRUE POSITIVE ($n_{TP}$)", "FALSE POSITIVE ($\\color{blue}{n_{FP}}$)"), 
+  P_Negative = c("FALSE NEGATIVE ($n_{FN}$)", "TRUE NEGATIVE ($n_{TN}$)")
+) %>%
+  rename("Predicted Positive" = P_Positive,
+         "Predicted Negative" = P_Negative) %>%
+  kable() %>%
+  kable_styling(font_size=15, full_width=FALSE) %>%
+  column_spec(1, bold=T)
+```
+
+
+
+## Simulation study - inpatient falls
+
+- Values for intervention effectiveness, healthcare costs, and patient outcomes literature
+  - Patient education intervention
+  - Healthcare costs
+  - QALYs lost from falls
+  - WTP of 28k
+
+>- Used point estimates of these for obtaining the cost-effective-threshold but incorporated uncertainty for evaluation
+
+
+## Simulation loop {.build}
+
+>1. Sample training data
+>2. Fit prediction model
+>3. Obtain cutpoints using each method (cost-effective method uses point estimates)
+>4. Sample validation data (n=10,000)
+>5. Get predicted probabilities for validation data using the fitted model
+>6. Get NMB values for each class by sampling costs/effectiveness values from their distributions
+>7. Calculate NMB for validation set under each cutpoint (obtained in step 3) and store results
+
+<div style="text-align: right">**Repeat 5,000 times**</div>
+
+
+## Results - primary analysis
+
+```{r, echo=F, warning=F, message=F, fig.align="center", fig.height=5}
+falls_sim <- readRDS("input/falls_sim_data.rds")
+
+cols_rename <- c(
+  "Treat All"="treat_all",
+  "Treat None"="treat_none",
+  "Cost-effective" ="cost_effective",
+  "The Closest to (0, 1) Criteria"="er", 
+  "Youden"="youden", 
+  "Sens-Spec product"="cz", 
+  "Index of Union"="iu"
+)
+
+falls_sim$df_result <- 
+  falls_sim$df_result %>%
+  rename(any_of(cols_rename))
+
+falls_sim$df_result %>%
+  plot_fw_histogram(
+    hdi=F, 
+    plot_labels=labs(x="Incremental Net Monetary Benefit (AUD)\n(reference method: Treat All)\n", y=""), 
+    inb_ref_col='Treat All'
+  )
+
+```
+
+## Results - primary analysis
+
+```{r, echo=F, fig.align='center', fig.height=4.8, fig.width=10}
+df_percent_best <- 
+  falls_sim$df_result %>%
+  pivot_longer(!n_sim) %>%
+  group_by(n_sim) %>%
+  arrange(desc(value)) %>% 
+  slice(1) %>%
+  ungroup() %>%
+  group_by(name) %>%
+  summarize(n=n())
+
+# make table with % winner
+data.frame(name=names(falls_sim$df_result)[-1]) %>%
+  left_join(., df_percent_best, by="name") %>%
+  mutate(
+    n=ifelse(is.na(n), 0, n),
+    `%`=scales::percent(n/nrow(falls_sim$df_result))
+  ) %>%
+  arrange(desc(n)) %>%
+  rename("Method"=name) %>%
+  kable(caption="Number of simulations with best NMB") %>%
+  kable_styling(font_size=15, full_width=FALSE, position="float_left") %>%
+  column_spec(1, bold=T)
+
+# table of median NMB
+falls_sim$df_result %>%
+  pivot_longer(!n_sim) %>%
+  group_by("Cutpoint method"=name) %>%
+  summarize(median_nmb = median(value),
+            mean_nmb = mean(value)) %>%
+  arrange(desc(mean_nmb)) %>%
+  mutate("Median NMB" = scales::dollar_format()(median_nmb),
+         "Mean NMB" = scales::dollar_format()(mean_nmb)) %>%
+  select(-median_nmb, -mean_nmb) %>%
+  kable(caption="NMB under each cutpoint method") %>%
+  kable_styling(font_size=15, full_width=FALSE, position="float_right") %>%
+  column_spec(1, bold=T)
+
+```
+
+
+## {.fullscreen}
+
+```{r echo=F, fig.align='center', fig.height=6.5, fig.width=7}
+auc_title <- 
+  cowplot::ggdraw() + 
+  cowplot::draw_label("Benefit is greater for less discriminant models", fontface='bold')
+cowplot::plot_grid(auc_title, readRDS("input/auc_plot.rds"), rel_heights=c(0.05,1), ncol=1)
+```
+
+
+## {.fullscreen}
+
+```{r echo=F, fig.align='center', fig.height=6.5, fig.width=7}
+event_rate_title <- 
+  cowplot::ggdraw() + 
+  cowplot::draw_label("Benefit is greater for rarer events", fontface='bold')
+cowplot::plot_grid(event_rate_title, readRDS("input/event_rate_plot.rds"), rel_heights=c(0.05,1), ncol=1)
+```
+
+
+## Cost-minimising cutpoint {.fullside}
+
+$t=\frac{C_{FP}-C_{TN}}{C_{FP}+C_{FN}-C_{TP}-C_{TN}}$
+
+
+## {.fullside}
+
+$t=\frac{C_{FP}-C_{TN}}{C_{FP}+C_{FN}-C_{TP}-C_{TN}}$ <img src='www/calibration_plots.jpeg' align="right" height="600" />
+
+
+## Conclusions {.build}
+
+- Considering costs when selecting a model cutpoint may facilitate value-based care
+
+
+## shiny app
+
+```{r, echo=F, warning=F, message=F}
+shinyAppDir("apps/cost-effective-cpms-app/")
+```
+
+
+## Conclusions
+
+- Considering costs when selecting a model cutpoint may facilitate value-based care
+
+
+- The best approach may be to treat-all or treat-none
+    - Worth considering before building prediction model 
+        - how good would a model need to be to be of any benefit with my available interventions and with my current patient population?
+    - Requires simulation and estimates for costs and healthcare outcome with and without the intervention (and uncertainty)
+
+![](www/hex.png){.center width=130px}
+
+
+## {predictNMB} <img src='www/hex.png' align="right" height="100" />
+
+
+## Thank you
+
+Team
+
+  - Robin Blythe
+  - Susanna Cramb
+  - Steven McPhail
+
+![](www/twitter-logo.png){width=30 align="left"} @Rex_Parsons8  
+
+![](www/github-logo.png){width=30px align="left"} @RWParsons
+
+![](www/website-icon.png){width=30px align="left"} http://rwparsons.github.io/
+
+shiny app: [aushsi.shinyapps.io/cost-effective-cpms-app/](https://aushsi.shinyapps.io/cost-effective-cpms-app/)
+
+slides: [github.com/RWParsons/im-22-presentation](https://github.com/RWParsons/im-22-presentation)
+
+
