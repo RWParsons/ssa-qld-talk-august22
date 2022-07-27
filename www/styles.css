@@ -44,3 +44,12 @@ div.footnotes {
   width: 80%;
   font-size: 0.6em;
 }
+
+slides > slide.title-slide hgroup h1 {
+  font-weight: bold;
+  font-size: 36pt;
+  position: fixed;
+  top: 50%;
+  left: 30%;
+  transform: translate(-27%, -50%);
+}

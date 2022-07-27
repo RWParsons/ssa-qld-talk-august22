@@ -67,8 +67,7 @@ $(document).ready(function() {
 But how do they inform the user?
 
 >- Probability/Odds of fall
->- High/medium/low risk categories 🚦
->- Binary categories (intervention vs none)
+>- Binary (intervention vs none) or 3+ (🚦) categories
 
 
 ## Prediction models
@@ -78,18 +77,35 @@ But how do they inform the user?
 
 
 - **Probability/Odds of fall**
-- **High/medium/low risk categories**🚦
-- Binary categories (intervention vs none)
+- Binary (intervention vs none) or 3+ (🚦) categories
+
+## Prediction models <footnote>Karel G M Moons et al. "Prognosis and prognostic research: what, why, and how?" *BMJ* (2009).</footnote>
+
+![](www/bmj-article-1.png){.center height=400px}
+
+---
+
+![](www/bmj-article-2.png){.center height=140px}
+
+<br>
+<br>
+<br>
+<br>
+
+Probabilities are ideal but hard to interpret
 
 
-## Prediction models
-
+## Prediction models {.build}
 
 But how do they inform the user?
 
 - Probability/Odds of fall
-- High/medium/low risk categories 🚦
-- **Binary categories (intervention vs none)**
+- **Binary (intervention vs none) or 3+ (🚦) categories**
+
+<p float="left">
+  <img src='www/met-call.jpg' height="250" />
+  <img src='www/melanoma-detection.jpg' height="250" />
+</p>
 
 
 ## Cutpoints
@@ -99,6 +115,7 @@ But how do they inform the user?
 
 
 ## Cutpoints
+
 
 ![](www/sand-2.png){.center height=400px}
 
