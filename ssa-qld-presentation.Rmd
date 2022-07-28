@@ -149,12 +149,15 @@ All maximise a performance based metric (not outcome) <footnote>Ilker Unal. "Def
 >- None of these consider anything beyond the model itself (costs, patient outcomes, interventions)
 
 
-## Objectives
+## Objectives {.build}
 
 
 - Integrate information of patient outcomes and treatment costs into cutpoint selection
 
 >- Evaluate how it compares to other cutpoint selection methods using a simulation study
+
+<br>
+... Get sidetracked
 
 
 ## Evaluation {.build}
@@ -194,16 +197,17 @@ data.frame(
 ```
 
 <div class="notes">
-$$ \tiny
-NMB = COST_{outcome}\times(1-EFFECT_{treatment}) + COST_{treatment}
-\\
+$$ 
 \scriptsize COST_{outcome} = QALY\times WTP
+\\
+\tiny
+NMB = COST_{outcome}\times(1-EFFECT_{treatment}) + COST_{treatment}
 $$
 </div>
 
 ## Cost-effective cutpoint {.build}
 
-The `{cutpointr}` R package by Christian Thiele includes almost all the cutpoint selection methods and also allows you to pass custom metrics that aren't already built in
+The `{cutpointr}` R package by Christian Thiele includes almost all the cutpoint selection methods and also allows you to pass custom metrics that aren't already built in (also made an update to the package after a twitter DM that streamlined this project)
 
 Applied a custom metric and `{cutpointr}` to maximise NMB: 
 
