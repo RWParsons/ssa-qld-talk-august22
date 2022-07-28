@@ -453,6 +453,11 @@ df_calplot %>%
 ```
 
 
+## Results - primary analysis
+
+- Costs and outcomes from inpatient falls literature
+- Event rate: 3.6%
+- Model AUC: 0.7
 
 ## Results - primary analysis
 
@@ -540,7 +545,7 @@ cowplot::plot_grid(auc_title, readRDS("input/auc_plot.rds"), rel_heights=c(0.05,
 ```{r echo=F, fig.align='center', fig.height=6.5, fig.width=7}
 event_rate_title <- 
   cowplot::ggdraw() + 
-  cowplot::draw_label("Benefit is greater for rarer events", fontface='bold')
+  cowplot::draw_label("Benefit is greater for rarer events (... or more common events?)", fontface='bold')
 cowplot::plot_grid(event_rate_title, readRDS("input/event_rate_plot.rds"), rel_heights=c(0.05,1), ncol=1)
 ```
 
@@ -614,8 +619,8 @@ map_dfr(1:3, fx_nmb1)
 ---
 
 ```r
-plot(density(rbeta(1000, 10, 20)))
-plot(density(rgamma(1000, 100)))
+plot(density(rbeta(1000, 10, 20)))  # Effectiveness
+plot(density(rgamma(1000, 100)))    # Cost of outcome
 ```
 
 ```{r, fig.align='hold', echo=F, fig.width=10}
@@ -650,7 +655,8 @@ library(predictNMB)
 # sim_obj <- do_nmb_sim(
 #   n_sims = 5000, n_valid = 10000, sim_auc = 0.7, event_rate = 0.1,
 #   fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
-#   cutpoint_methods = c("all", "none", "youden", "cost_effective")
+#   cutpoint_methods = c("all", "none", "youden", "cost_effective"),
+#   meet_min_events = TRUE
 # )
 # saveRDS(sim_obj, "input/sim_obj.rds")
 
@@ -659,7 +665,8 @@ sim_obj <- readRDS("input/sim_obj.rds")
 # screen_obj <- screen_simulation_inputs(
 #   n_sims = 5000, n_valid = 10000, sim_auc = seq(0.7, 0.95, 0.05), event_rate = c(0.01, 0.05, 0.1),
 #   fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
-#   cutpoint_methods = c("all", "none", "youden", "cost_effective")
+#   cutpoint_methods = c("all", "none", "youden", "cost_effective"),
+#   meet_min_events = TRUE
 # )
 # saveRDS(screen_obj, "input/screen_obj.rds")
 
@@ -715,6 +722,88 @@ plot(screen_obj, rename_vector=named_vec, what="inb",inb_ref_col="Treat All")
 ```{r, message=F, fig.align="center"}
 plot(screen_obj, rename_vector=named_vec, x_axis_var="event_rate")
 ```
+
+## New intervention? {.smaller}
+
+```{r, echo=F}
+n <- 10000
+rbind(
+  data.frame(eff=rbeta(n, 10, 20), group="Old treatment"),
+  data.frame(eff=rbeta(n, 10, 15), group="New treatment")
+) %>%
+  ggplot(aes(x=eff, col=group, fill=group)) + 
+  geom_density(size=1, alpha=0.3) +
+  theme_bw() +
+  labs(y="",
+       x="effectiveness",
+       fill="", col="")
+```
+
+---
+
+```{r}
+fx_nmb_old <- function(...) {
+  effectiveness <- rbeta(1, 10, 20)
+  event_cost <- rgamma(1, 100)
+  treatment_cost <- 10
+  
+  c(
+    "TP" = -event_cost * (1-effectiveness) - treatment_cost,
+    "FP" = -treatment_cost, 
+    "TN" =  0,
+    "FN" = -event_cost
+  )
+}
+
+fx_nmb_new <- function(...) {
+  effectiveness <- rbeta(1, 10, 15)
+  event_cost <- rgamma(1, 100)
+  treatment_cost <- 8
+  
+  c(
+    "TP" = -event_cost * (1-effectiveness) - treatment_cost,
+    "FP" = -treatment_cost, 
+    "TN" =  0,
+    "FN" = -event_cost
+  )
+}
+```
+---
+
+```{r, echo=F}
+# cl <- parallel::makeCluster(parallel::detectCores())
+# screen_obj_intervention <- screen_simulation_inputs(
+#   n_sims = 5000, n_valid = 10000, sim_auc = seq(0.7, 0.95, 0.05), event_rate = 0.05,
+#   fx_nmb_training = fx_nmb_old,
+#   fx_nmb_evaluation = list("fx_nmb_old"=fx_nmb_old, "fx_nmb_new"=fx_nmb_new),
+#   cutpoint_methods = c("all", "none", "youden"), meet_min_events = TRUE, cl = cl
+# )
+# saveRDS(screen_obj_intervention, "input/screen_obj_intervention.rds")
+# plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
+
+screen_obj_intervention <- readRDS("input/screen_obj_intervention.rds")
+
+```
+
+```r
+cl <- parallel::makeCluster(parallel::detectCores())
+screen_obj_intervention <- screen_simulation_inputs(
+  n_sims = 5000, n_valid = 10000, sim_auc = seq(0.7, 0.95, 0.05), event_rate = 0.05,
+  fx_nmb_training = fx_nmb_old,  # training doesn't matter since we are not using a cost_effective threshold
+  fx_nmb_evaluation = list("fx_nmb_old"=fx_nmb_old, "fx_nmb_new"=fx_nmb_new),
+  cutpoint_methods = c("all", "none", "youden"), meet_min_events = TRUE, cl = cl
+)
+
+plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
+```
+
+---
+
+```{r}
+plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
+```
+
+
 
 ## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> {.build}
 
