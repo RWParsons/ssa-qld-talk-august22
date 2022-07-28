@@ -351,7 +351,7 @@ data.frame(
 
 ## Simulation loop {.build}
 
->1. Sample training data
+>1. Sample training data (given model AUC and event rate)
 >2. Fit prediction model
 >3. Obtain cutpoints using each method (cost-effective method uses point estimates)
 >4. Sample validation data (n=10,000)
@@ -360,6 +360,98 @@ data.frame(
 >7. Calculate NMB for validation set under each cutpoint (obtained in step 3) and store results
 
 <div style="text-align: right">**Repeat 5,000 times**</div>
+
+## Simulation loop
+
+1. **Sample training data (given model AUC and event rate)**
+2. Fit prediction model
+3. Obtain cutpoints using each method (cost-effective method uses point estimates)
+4. **Sample validation data (n=10,000)**
+5. Get predicted probabilities for validation data using the fitted model
+6. Get NMB values for each class by sampling costs/effectiveness values from their distributions
+7. Calculate NMB for validation set under each cutpoint (obtained in step 3) and store results
+
+<div style="text-align: right">**Repeat 5,000 times**</div>
+
+
+## Sampling data
+
+Existing approaches sample coefficients from MVN for coefficients and then use those to sample the outcome.
+
+- No ability to specify AUC or event rate
+
+I want:
+
+```r
+get_sample <- function(n_samples, model_auc, event_rate){
+  ...
+  return(dataset)
+}
+```
+
+## Sampling data {.build}
+
+Approach:
+
+>- Transform AUC to Cohens' D <footnote>Jesús F. Salgado. "Transforming the Area under the Normal Curve (AUC) into Cohen’s d, Pearson’s rpb, Odds-Ratio, and Natural Log Odds-Ratio: Two Conversion Tables" *European Journal of Psychology Applied to Legal Context* (2018).</footnote>
+>- Sample the number of positives from binomial distribution given event rate and number of samples
+
+```r
+x <- c(rnorm(n_neg, mean = 0, sd = 1), rnorm(n_pos, mean = cohens_d, sd = 1))
+y <- c(rep(0, n_neg), rep(1, n_pos))
+
+return(data.frame(x = x, y = y))
+```
+## Sampling data
+
+```{r, echo=F}
+sample_data <- 
+  get_sample(auc=0.7, n_samples=10000, prevalence=0.05) %>%
+  rename(x=predicted, y=actual)
+```
+
+```r
+sample_data <- get_sample(n_samples=10000, model_auc=0.7, event_rate=0.05)
+```
+
+```{r, message=F, warning=F}
+model <- glm(y ~ x, data=sample_data, family=binomial())
+sample_data$prob <- predict(model, type="response")
+
+pROC::auc(sample_data$y, sample_data$prob)
+```
+
+## Sampling data
+
+```{r, echo=F, fig.align="center", fig.height=5}
+df_calplot <- 
+  sample_data %>%
+  mutate(bin = ntile(prob, 10)) %>%
+  group_by(bin) %>%
+  summarize(
+    n=n(), 
+    bin_pred=mean(prob),
+    bin_prob=mean(y),
+    se=sqrt((bin_prob * (1 - bin_prob)) / n),
+    ul = bin_prob + 1.96*se,
+    ll = bin_prob - 1.96*se
+  ) %>%
+  ungroup() 
+
+df_calplot %>% 
+  ggplot() + 
+  geom_pointrange(data=df_calplot, aes(x=bin_pred, y=bin_prob, ymin=ll, ymax=ul), alpha=0.6)+
+  geom_abline() +
+  theme_bw() +
+  coord_equal() +
+  labs(
+    title="Results in a calibrated model",
+    x="Predicted",
+    y="Observed"
+  )
+
+```
+
 
 
 ## Results - primary analysis
