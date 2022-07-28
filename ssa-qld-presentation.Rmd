@@ -746,7 +746,6 @@ fx_nmb_old <- function(...) {
   effectiveness <- rbeta(1, 10, 20)
   event_cost <- rgamma(1, 100)
   treatment_cost <- 10
-  
   c(
     "TP" = -event_cost * (1-effectiveness) - treatment_cost,
     "FP" = -treatment_cost, 
@@ -754,12 +753,10 @@ fx_nmb_old <- function(...) {
     "FN" = -event_cost
   )
 }
-
 fx_nmb_new <- function(...) {
   effectiveness <- rbeta(1, 10, 15)
   event_cost <- rgamma(1, 100)
   treatment_cost <- 8
-  
   c(
     "TP" = -event_cost * (1-effectiveness) - treatment_cost,
     "FP" = -treatment_cost, 
@@ -786,20 +783,18 @@ screen_obj_intervention <- readRDS("input/screen_obj_intervention.rds")
 ```
 
 ```r
-cl <- parallel::makeCluster(parallel::detectCores())
 screen_obj_intervention <- screen_simulation_inputs(
   n_sims = 5000, n_valid = 10000, sim_auc = seq(0.7, 0.95, 0.05), event_rate = 0.05,
-  fx_nmb_training = fx_nmb_old,  # training doesn't matter since we are not using a cost_effective threshold
+  fx_nmb_training = fx_nmb_old,
   fx_nmb_evaluation = list("fx_nmb_old"=fx_nmb_old, "fx_nmb_new"=fx_nmb_new),
-  cutpoint_methods = c("all", "none", "youden"), meet_min_events = TRUE, cl = cl
+  cutpoint_methods = c("all", "none", "youden"), meet_min_events = TRUE, 
+  cl = parallel::makeCluster(parallel::detectCores())
 )
-
-plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
 ```
 
 ---
 
-```{r}
+```{r, message=F}
 plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
 ```
 
@@ -808,8 +803,8 @@ plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
 ## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> {.build}
 
 >- How good does my model need to be useful (in the context of how it'd be used)?
->- What is the relative merit of improving my model's AUC by X (in \$)?
->- Has or will there research efforts towards developing models with ineffective interventions or where models are required to be unbelievably good to be effective?
+>- What is the relative merit of X improvement of my model's AUC (in \$)?
+>- How might the viability of my model change in a new patient population (`event_rate`)?
 
 
 ## Thank you <img src='www/hex.png' align="right" height="200" />
