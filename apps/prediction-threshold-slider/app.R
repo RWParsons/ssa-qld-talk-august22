@@ -1,8 +1,7 @@
 library(shiny)
 library(knitr)
 library(kableExtra)
-
-source("../src/utils.R", chdir = T)
+library(tidyverse)
 
 ui <- fluidPage(
     sidebarLayout(
@@ -37,16 +36,16 @@ server <- function(input, output) {
     
     df_preds <- reactive({
       set.seed(42)
-      data <- get_sample(
+      data <- predictNMB::get_sample(
         auc=input$auc, 
         n_samples=10000, 
         prevalence=input$event_rate
       )
       
-      mod <- glm(actual ~ predicted, data=data, family=binomial())
+      mod <- glm(actual ~ x, data=data, family=binomial())
+      
       data$actual <- as.factor(data$actual)
       data$proba <- predict(mod, type="response")
-      df_out <<- data
       data
     })
     
@@ -84,16 +83,9 @@ server <- function(input, output) {
         column_spec(2:3, width = "6em") %>%
         column_spec(1, bold=T) %>%
         add_header_above(c(" "=1, "Predicted"=2)) %>%
-        group_rows("Actual", 1, 2)
+        kableExtra::group_rows("Actual", 1, 2)
     })
 }
-
-
-
-
-
-
-
 
 
 

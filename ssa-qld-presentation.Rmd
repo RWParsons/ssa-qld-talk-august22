@@ -1,7 +1,7 @@
 ---
-title: "Considering patient outcomes and healthcare costs when obtaining prediction model cutpoints may improve value-based care "
+title: "Considering patient outcomes and healthcare costs when obtaining prediction model cutpoints may improve value-based care"
 author: "Rex Parsons"
-date: '2022-07-15'
+date: '2022-08-03'
 output:
   ioslides_presentation:
     widescreen: yes
@@ -18,7 +18,7 @@ resource_files:
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(kableExtra)
-source("apps/src/utils.R")
+library(predictNMB)
 source("src/functions.R")
 ```
 
@@ -129,7 +129,7 @@ But how do they inform the user?
 ## {.fullscreen}
 
 ```{r, echo=F, message=F, warning=F}
-shinyAppDir("apps/prediction-threshold-slider/")
+shiny::shinyAppDir("apps/prediction-threshold-slider/")
 ```
 
 ## Cutpoint selection methods
@@ -389,7 +389,7 @@ get_sample <- function(n_samples, model_auc, event_rate){
 }
 ```
 
-## Sampling data {.build}
+## Sampling data {.build .smaller} 
 
 Approach:
 
@@ -397,17 +397,25 @@ Approach:
 >- Sample the number of positives from binomial distribution given event rate and number of samples
 
 ```r
-x <- c(rnorm(n_neg, mean = 0, sd = 1), rnorm(n_pos, mean = cohens_d, sd = 1))
-y <- c(rep(0, n_neg), rep(1, n_pos))
+get_sample <- function(n_samples, model_auc, event_rate){
+  cohens_d <- ...
+  n_pos <- ...
+  n_neg <- ...
+  
+  x <- c(rnorm(n_neg, mean = 0, sd = 1), 
+         rnorm(n_pos, mean = cohens_d, sd = 1))
+  y <- c(rep(0, n_neg), 
+         rep(1, n_pos))
 
-return(data.frame(x = x, y = y))
+  return(data.frame(x = x, y = y))
+}
 ```
 ## Sampling data
 
 ```{r, echo=F}
 sample_data <- 
   get_sample(auc=0.7, n_samples=10000, prevalence=0.05) %>%
-  rename(x=predicted, y=actual)
+  rename(y=actual)
 ```
 
 ```r
