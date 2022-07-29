@@ -815,6 +815,10 @@ plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
 >- What is the relative merit of X improvement of my model's AUC (in \$)?
 >- How might the viability of my model change in a new patient population (`event_rate`)?
 
+What's next:
+
+>- Add summary methods for `do_nmb_sim()` and `screen_simulation_inputs()`
+>- Incorporate feedback from you!
 
 ## Thank you <img src='www/hex.png' align="right" height="200" />
 
