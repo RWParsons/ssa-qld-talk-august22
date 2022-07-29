@@ -557,6 +557,11 @@ event_rate_title <-
 cowplot::plot_grid(event_rate_title, readRDS("input/event_rate_plot.rds"), rel_heights=c(0.05,1), ncol=1)
 ```
 
+## shiny app
+
+```{r, echo=F, warning=F, message=F}
+shinyAppDir("apps/cost-effective-cpms-app/")
+```
 
 ## Cost-minimising cutpoint {.fullside}
 
@@ -571,20 +576,13 @@ $t=\frac{C_{FP}-C_{TN}}{C_{FP}+C_{FN}-C_{TP}-C_{TN}}$ <img src='www/calibration_
 ## Conclusions {.build}
 
 - Considering costs when selecting a model cutpoint may facilitate value-based care
-
-
-## shiny app
-
-```{r, echo=F, warning=F, message=F}
-shinyAppDir("apps/cost-effective-cpms-app/")
-```
+- Optimising NMB in the cutpoint method is be better than existing cost-minimisation approach when models are poorly calibrated
 
 
 ## Conclusions
 
 - Considering costs when selecting a model cutpoint may facilitate value-based care
-
-
+- Optimising NMB in the cutpoint method is be better than existing cost-minimisation approach when models are poorly calibrated
 - The best approach may be to treat-all or treat-none
     - Worth considering before building prediction model 
         - how good would a model need to be to be of any benefit with my available interventions and with my current patient population?
@@ -593,15 +591,18 @@ shinyAppDir("apps/cost-effective-cpms-app/")
 ![](www/hex.png){.center width=130px}
 
 
-## `{predictNMB}` <img src='www/hex.png' align="right" height="100" />
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> {.build}
 
 ![](www/github-logo.png){width=30px align="left"} github.com/RWParsons/predictNMB
 
->- How would my model (or treat-all/none strategy) perform regarding NMB?
+- How would my model perform regarding NMB?
+  - versus treat-all, treat-none, and under any cutpoint selection method
+
 >- What happens when the intervention changes?
 >- What happens when the model improves?
 >- What happens when the event rate changes?
 
+Applies to both diagnostic and prognostic models, as long as it's possible to cost correct and incorrect classifications
 
 ```{r, echo=F}
 # remove all objects from first part of talk so that there's no conflicts with predictNMB functions
@@ -722,7 +723,7 @@ plot(screen_obj, rename_vector=named_vec)
 ---
 
 ```{r, message=F, fig.align="center"}
-plot(screen_obj, rename_vector=named_vec, what="inb",inb_ref_col="Treat All")
+plot(screen_obj, rename_vector=named_vec, what="inb", inb_ref_col="Treat All")
 ```
 
 ---
