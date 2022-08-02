@@ -376,7 +376,7 @@ data.frame(
 
 ## Sampling data
 
-Existing approaches sample coefficients from MVN for coefficients and then use those to sample the outcome.
+Existing approaches sample coefficients from MVN and then use those to sample the outcome.
 
 - No ability to specify AUC or event rate
 
@@ -583,12 +583,12 @@ $t=\frac{C_{FP}-C_{TN}}{C_{FP}+C_{FN}-C_{TP}-C_{TN}}$ <img src='www/calibration_
 
 - Considering costs when selecting a model cutpoint may facilitate value-based care
 - Optimising NMB in the cutpoint method is be better than existing cost-minimisation approach when models are poorly calibrated
-- The best approach may be to treat-all or treat-none
-    - Worth considering before building prediction model 
-        - how good would a model need to be to be of any benefit with my available interventions and with my current patient population?
-    - Requires simulation and estimates for costs and healthcare outcome with and without the intervention (and uncertainty)
+- The best approach may be to treat-all or treat-none (requires simulation)
 
-![](www/hex.png){.center width=130px}
+<p float="left">
+  <img src='www/Beyonce_package.png' height="250" />
+  <img src='www/hex.png' height="250" />
+</p>
 
 
 ## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> {.build}
@@ -611,6 +611,19 @@ rm(list=ls())
 
 
 ## `{predictNMB}` <img src='www/hex.png' align="right" height="100" />
+
+Simulated situation:
+
+- Healthcare event costs $100
+- A treatment that reduces the probability of these events by a third costs $10
+
+<p float="left">
+  <img src='www/fall-julia.gif' height="300" />
+  <img src='www/patient-education.jpg' height="300" />
+</p>
+
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" />
+
 
 ```{r}
 fx_nmb1 <- function(...) {
@@ -660,12 +673,12 @@ map_dfr(1:3, fx_nmb2)
 
 ```{r, include=F}
 library(predictNMB)
-
+# cl <- parallel::makeCluster(parallel::detectCores())
 # sim_obj <- do_nmb_sim(
 #   n_sims = 5000, n_valid = 10000, sim_auc = 0.7, event_rate = 0.1,
 #   fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
 #   cutpoint_methods = c("all", "none", "youden", "cost_effective"),
-#   meet_min_events = TRUE
+#   meet_min_events = TRUE, cl = cl
 # )
 # saveRDS(sim_obj, "input/sim_obj.rds")
 
@@ -675,7 +688,7 @@ sim_obj <- readRDS("input/sim_obj.rds")
 #   n_sims = 5000, n_valid = 10000, sim_auc = seq(0.7, 0.95, 0.05), event_rate = c(0.01, 0.05, 0.1),
 #   fx_nmb_training = fx_nmb1, fx_nmb_evaluation = fx_nmb2,
 #   cutpoint_methods = c("all", "none", "youden", "cost_effective"),
-#   meet_min_events = TRUE
+#   meet_min_events = TRUE, cl = cl
 # )
 # saveRDS(screen_obj, "input/screen_obj.rds")
 
@@ -788,7 +801,6 @@ fx_nmb_new <- function(...) {
 # plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
 
 screen_obj_intervention <- readRDS("input/screen_obj_intervention.rds")
-
 ```
 
 ```r
@@ -807,17 +819,28 @@ screen_obj_intervention <- screen_simulation_inputs(
 plot(screen_obj_intervention, x_axis_var = "fx_nmb_evaluation")
 ```
 
+## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> {.build}
+
+
+```{r}
+make_summary_table(sim_obj)
+```
+
+---
+
+```{r}
+make_summary_table(screen_obj_intervention)
+```
 
 
 ## `{predictNMB}` <img src='www/hex.png' align="right" height="100" /> {.build}
 
 >- How good does my model need to be useful (in the context of how it'd be used)?
 >- What is the relative merit of X improvement of my model's AUC (in \$)?
->- How might the viability of my model change in a new patient population (`event_rate`)?
+>- How might the viability of my model change in a new patient population?
 
 What's next:
 
->- Add summary methods for `do_nmb_sim()` and `screen_simulation_inputs()`
 >- Incorporate feedback from you!
 
 ## Thank you <img src='www/hex.png' align="right" height="200" />
