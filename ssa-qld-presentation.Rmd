@@ -414,7 +414,7 @@ get_sample <- function(n_samples, model_auc, event_rate){
 
 ```{r, echo=F}
 sample_data <- 
-  get_sample(auc=0.7, n_samples=10000, prevalence=0.05) %>%
+  predictNMB::get_sample(auc=0.7, n_samples=10000, prevalence=0.05) %>%
   rename(y=actual)
 ```
 
@@ -560,7 +560,7 @@ cowplot::plot_grid(event_rate_title, readRDS("input/event_rate_plot.rds"), rel_h
 ## shiny app
 
 ```{r, echo=F, warning=F, message=F}
-shinyAppDir("apps/cost-effective-cpms-app/")
+shiny::shinyAppDir("apps/cost-effective-cpms-app/")
 ```
 
 ## Cost-minimising cutpoint {.fullside}
